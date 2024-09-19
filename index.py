@@ -1,6 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 import time
 import pandas as pd
@@ -22,10 +24,10 @@ chrome_driver_path = "./chromedriver.exe"
 # Set up ChromeDriver with the options
 service = Service(chrome_driver_path)
 driver = webdriver.Chrome(service=service, options=chrome_options)
+actions = ActionChains(driver)
 
 # Find the textarea and submit button
 textarea = driver.find_element(By.XPATH, '//*[@id="prompt-textarea"]')
-submit_button = driver.find_element(By.XPATH, '//*[@id="__next"]/div/div[2]/main/div[1]/div[2]/div[1]/div/form/div/div[2]/div/div/button')
 
 # Read the prompts from the Excel file
 df = pd.read_excel(sheet, engine='openpyxl', dtype=object, header=None)
@@ -33,19 +35,20 @@ cellTexts = df.values.tolist()
 cellTexts = cellTexts[1:]
 
 # Generate responses for each prompt
-startingIndex = 3
+startingIndex = 2
 generationStatus = False
 responses = []
 for prompt in cellTexts:
     textarea.send_keys(prompt[0])
-    submit_button.click()
+    actions.send_keys(Keys.ENTER)
+    actions.perform()
     while not generationStatus:
         try:
-            find_test = driver.find_element(By.XPATH, f'//*[@id="__next"]/div/div[2]/main/div[1]/div[1]/div/div/div/div/div[{startingIndex}]/div/div/div[2]/div/div[2]/div')
+            find_test = driver.find_element(By.XPATH, f'/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article[{startingIndex}]/div/div/div[2]/div/div[2]/div/div/span[1]/button/span')
             generationStatus = True
         except:
             time.sleep(1)
-    response = driver.find_element(By.XPATH, f'//*[@id="__next"]/div/div[2]/main/div[1]/div[1]/div/div/div/div/div[{startingIndex}]/div/div/div[2]/div/div[1]/div/div/div')
+    response = driver.find_element(By.XPATH, f'/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article[{startingIndex}]/div/div/div[2]/div/div[1]/div/div/div')
     responses.append(response.text)
     startingIndex += 2
     generationStatus = False
